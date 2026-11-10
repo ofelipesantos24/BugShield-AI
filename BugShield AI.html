@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BugShield AI — Revise o código antes de ir para produção</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#FFFFFF; --surface:#FFF4EA; --ink:#2A1708; --muted:#6B5646; --line:#F6D9BF;
+  --orange:#F26B0F; --orange-d:#C94F00; --on-orange:#FFFFFF;
+  --code-bg:#2A1708; --code-ink:#FFE9D6; --bad:#FF8A4C; --ok:#8FE3A6;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#1B0F06; --surface:#2A1A0D; --ink:#FFF4EA; --muted:#CDB5A0; --line:#4A2D17;
+    --orange:#FF7A1F; --orange-d:#FF9A52; --code-bg:#0F0803;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1B0F06; --surface:#2A1A0D; --ink:#FFF4EA; --muted:#CDB5A0; --line:#4A2D17;
+  --orange:#FF7A1F; --orange-d:#FF9A52; --code-bg:#0F0803;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 Inter,system-ui,sans-serif}
+h1,h2,h3{font-family:'Bricolage Grotesque',Inter,sans-serif;line-height:1.08;margin:0}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:20px 0}
+.logo{font:800 22px 'Bricolage Grotesque',sans-serif;text-decoration:none;display:flex;align-items:center;gap:10px}
+.logo i{width:28px;height:32px;background:var(--orange);clip-path:polygon(50% 0,100% 18%,100% 55%,50% 100%,0 55%,0 18%);display:inline-block}
+.btn{display:inline-block;padding:13px 22px;border-radius:10px;font-weight:500;text-decoration:none;border:2px solid var(--orange)}
+.btn.main{background:var(--orange);color:var(--on-orange)}
+.btn.main:hover{background:var(--orange-d);border-color:var(--orange-d)}
+.btn.ghost{color:var(--orange-d)}
+.btn.ghost:hover{background:var(--surface)}
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:48px;align-items:center;padding:56px 0 88px}
+.hero h1{font-size:clamp(40px,6vw,66px);font-weight:800;letter-spacing:-.025em}
+.hero p{color:var(--muted);font-size:19px;max-width:46ch;margin:22px 0 30px}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.pr{background:var(--code-bg);color:var(--code-ink);border-radius:16px;overflow:hidden;box-shadow:14px 14px 0 var(--orange);font:400 13px/1.7 'JetBrains Mono',ui-monospace,monospace}
+.pr header{display:flex;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,.07);font-size:12px}
+.pr pre{margin:0;padding:14px 0;overflow-x:auto}
+.ln{display:block;padding:0 16px;white-space:pre}
+.ln.del{background:rgba(255,138,76,.18);color:var(--bad)}
+.ln.add{background:rgba(143,227,166,.14);color:var(--ok)}
+.flag{margin:0 16px 16px;padding:12px 14px;border-radius:10px;background:var(--orange);color:#fff;font:500 13px/1.5 Inter,sans-serif}
+.flag b{display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:15px}
+section{padding:80px 0}
+.tint{background:var(--surface)}
+h2{font-size:clamp(30px,4vw,44px);font-weight:700;letter-spacing:-.02em;max-width:20ch}
+.sub{color:var(--muted);max-width:56ch;margin:14px 0 0}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:44px;counter-reset:s;list-style:none;padding:0}
+.steps li{counter-increment:s;padding:0 28px 0 0}
+.steps li::before{content:counter(s);display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:var(--orange);color:#fff;font:700 18px 'Bricolage Grotesque',sans-serif;margin-bottom:14px}
+.steps h3{font-size:20px;margin-bottom:6px}
+.steps p{margin:0;color:var(--muted);font-size:16px}
+.feats{display:grid;grid-template-columns:repeat(2,1fr);gap:0;margin-top:44px;border-top:2px solid var(--orange)}
+.feat{padding:28px 32px 28px 0;border-bottom:1px solid var(--line)}
+.feat:nth-child(even){padding:28px 0 28px 32px;border-left:1px solid var(--line)}
+.feat h3{font-size:22px;margin-bottom:8px}
+.feat p{margin:0;color:var(--muted);font-size:16px}
+.sev{display:flex;gap:10px;flex-wrap:wrap;margin-top:32px}
+.sev span{padding:6px 14px;border-radius:99px;font-size:14px;font-weight:500;border:2px solid var(--orange);color:var(--orange-d)}
+.sev span:first-child{background:var(--orange);color:#fff}
+.stack{display:flex;flex-wrap:wrap;gap:10px;margin-top:32px}
+.stack span{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:15px}
+.band{background:var(--orange);color:#fff;text-align:center;padding:84px 0}
+.band h2{max-width:none;margin:0 auto}
+.band p{margin:14px auto 28px;max-width:48ch;opacity:.95}
+.band .btn{background:#fff;color:var(--orange-d);border-color:#fff}
+.band .btn:hover{background:var(--surface)}
+footer{padding:28px 0;color:var(--muted);font-size:14px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+@media(max-width:820px){
+  .hero{grid-template-columns:1fr;padding-bottom:64px}
+  .pr{box-shadow:8px 8px 0 var(--orange)}
+  .steps,.feats{grid-template-columns:1fr}
+  .steps li{padding:0 0 28px}
+  .feat,.feat:nth-child(even){padding:24px 0;border-left:0}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="#"><i></i>BugShield AI</a>
+    <a class="btn ghost" href="#comecar">Começar grátis</a>
+  </nav>
+  <div class="hero">
+    <div>
+      <h1>Encontre o bug antes que ele chegue à produção.</h1>
+      <p>O BugShield AI analisa cada Pull Request, aponta falhas de segurança, segredos expostos e erros de lógica, e explica a correção em linguagem simples.</p>
+      <div class="cta">
+        <a class="btn main" href="#comecar">Conectar meu GitHub</a>
+        <a class="btn ghost" href="#como">Ver como funciona</a>
+      </div>
+    </div>
+    <div class="pr" role="img" aria-label="Exemplo de Pull Request com uma chave de API exposta, sinalizada pelo BugShield">
+      <header><span>PR #214 · api/payments.ts</span><span>BugShield analisou em 8s</span></header>
+      <pre><code><span class="ln"> const client = new Stripe(</span><span class="ln del">-  "sk_live_51Hx9...Qz2"</span><span class="ln add">+  process.env.STRIPE_KEY</span><span class="ln"> );</span></code></pre>
+      <div class="flag"><b>Crítico: chave de API exposta</b>Quem lê o repositório pode usar essa chave. Troque pela variável de ambiente e gere uma nova chave no painel do Stripe.</div>
+    </div>
+  </div>
+</div>
+
+<section class="tint" id="como">
+  <div class="wrap">
+    <h2>Do Pull Request ao relatório em três passos</h2>
+    <ol class="steps">
+      <li><h3>Conecte o GitHub</h3><p>Autorize o BugShield nos repositórios que quiser proteger.</p></li>
+      <li><h3>Abra um Pull Request</h3><p>A análise começa sozinha. Cada problema recebe uma gravidade.</p></li>
+      <li><h3>Corrija e compartilhe</h3><p>Aplique o patch sugerido e envie o relatório para o time.</p></li>
+    </ol>
+    <div class="sev" aria-label="Níveis de gravidade"><span>Crítico</span><span>Alto</span><span>Médio</span><span>Baixo</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>O que o BugShield faz por você</h2>
+    <div class="feats">
+      <div class="feat"><h3>Security Scanner</h3><p>Detecta senhas, tokens, chaves de API e vulnerabilidades conhecidas antes do merge.</p></div>
+      <div class="feat"><h3>Bug Detector</h3><p>Encontra erros e condições que podem quebrar o código em produção.</p></div>
+      <div class="feat"><h3>AI Fix Generator</h3><p>Sugere a correção, explica o motivo e, quando possível, gera o patch pronto.</p></div>
+      <div class="feat"><h3>Integração com o GitHub</h3><p>Comenta direto no Pull Request, sem mudar o seu fluxo de trabalho.</p></div>
+      <div class="feat"><h3>Quality Dashboard</h3><p>Pontuação de qualidade e histórico de problemas por repositório.</p></div>
+      <div class="feat"><h3>Relatório compartilhável</h3><p>Um link com todos os achados para enviar ao time ou ao cliente.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="tint">
+  <div class="wrap">
+    <h2>Feito com ferramentas em que você já confia</h2>
+    <p class="sub">Semgrep e Gitleaks encontram os problemas. A IA explica e sugere a correção.</p>
+    <div class="stack">
+      <span>React + TypeScript</span><span>Tailwind CSS</span><span>Supabase</span><span>PostgreSQL</span><span>OpenAI API</span><span>GitHub API</span><span>Semgrep</span><span>Gitleaks</span><span>Vercel</span>
+    </div>
+  </div>
+</section>
+
+<div class="band" id="comecar">
+  <div class="wrap">
+    <h2>Seu próximo Pull Request merece uma segunda opinião.</h2>
+    <p>Conecte um repositório e veja a primeira análise em minutos.</p>
+    <a class="btn" href="https://github.com/">Conectar meu GitHub</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <footer><span>© 2026 BugShield AI</span><span>Projeto open source · Licença MIT</span></footer>
+</div>
+</body>
+</html>
